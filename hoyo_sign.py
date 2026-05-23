@@ -13,11 +13,11 @@ import os
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
 
 URL_DICT = {
-    'Genshin': 'https://sg-public-api.hoyoverse.com/event/sol/sign?lang=en-us&act_id=e202102251931481',
-    'Star_Rail': 'https://sg-public-api.hoyoverse.com/event/luna/os/sign?lang=en-us&act_id=e202303301540311',
-    'Honkai_3': 'https://sg-public-api.hoyoverse.com/event/mani/sign?lang=en-us&act_id=e202110291205111',
-    'Tears_of_Themis': 'https://sg-public-api.hoyoverse.com/event/luna/os/sign?lang=en-us&act_id=e202308141137581',
-    'Zenless_Zone_Zero': 'https://sg-public-api.hoyoverse.com/event/luna/zzz/os/sign?lang=en-us&act_id=e202406031448091',
+    'Genshin': 'https://bbs-api-os.hoyoverse.com/apihub/app/sign/in?game=ys',
+    'Star_Rail': 'https://bbs-api-os.hoyoverse.com/apihub/app/sign/in?game=hkrpg',
+    'Honkai_3': 'https://bbs-api-os.hoyoverse.com/apihub/app/sign/in?game=bh3',
+    'Tears_of_Themis': 'https://bbs-api-os.hoyoverse.com/apihub/app/sign/in?game=thw',
+    'Zenless_Zone_Zero': 'https://bbs-api-os.hoyoverse.com/apihub/app/sign/in?game=nbc',
 }
 
 HEADER_DICT = {
@@ -25,11 +25,12 @@ HEADER_DICT = {
         'Accept': 'application/json, text/plain, */*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Connection': 'keep-alive',
-        'x-rpc-app_version': '2.34.1',
+        'x-rpc-app_version': '2.41.1',
         'User-Agent': USER_AGENT,
-        'x-rpc-client_type': '4',
-        'Referer': 'https://act.hoyolab.com/',
-        'Origin': 'https://act.hoyolab.com',
+        'x-rpc-client_type': '2',
+        'Content-Type': 'application/json',
+        'Origin': 'https://bbs-os.hoyoverse.com',
+        'Referer': 'https://bbs-os.hoyoverse.com/',
     },
     'Zenless_Zone_Zero': {
         'x-rpc-signgame': 'zzz',
@@ -72,7 +73,7 @@ def sign_game(profile, game_name):
     random_delay()
 
     try:
-        resp = requests.post(url, headers=headers, timeout=15)
+        resp = requests.post(url, headers=headers, json={"gids": 2}, timeout=15)
         if resp.status_code != 200:
             return f"❌ {game_name.replace('_', ' ')}: HTTP {resp.status_code}, body={resp.text[:200]}"
         try:
