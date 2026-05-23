@@ -48,7 +48,18 @@ def random_delay():
 def sign_game(profile, game_name):
     """签到单个游戏"""
     config = profile['games']
-    if not config.get(game_name, False):
+    key = game_name.lower().replace(' ', '_').replace('-', '_')
+    if key == 'genshin':
+        key = 'genshin'
+    elif game_name == 'Honkai_3':
+        key = 'honkai_3'
+    elif game_name == 'Star_Rail':
+        key = 'honkai_star_rail'
+    elif game_name == 'Tears_of_Themis':
+        key = 'tears_of_themis'
+    elif game_name == 'Zenless_Zone_Zero':
+        key = 'zenless_zone_zero'
+    if not config.get(key, False):
         return None
 
     headers = {
