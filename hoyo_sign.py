@@ -13,11 +13,11 @@ import os
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
 
 URL_DICT = {
-    'Genshin': 'https://sg-hk4e-api.hoyolab.com/event/sol/sign?lang=en-us&act_id=e202102251931481',
-    'Star_Rail': 'https://sg-public-api.hoyolab.com/event/luna/os/sign?lang=en-us&act_id=e202303301540311',
-    'Honkai_3': 'https://sg-public-api.hoyolab.com/event/mani/sign?lang=en-us&act_id=e202110291205111',
-    'Tears_of_Themis': 'https://sg-public-api.hoyolab.com/event/luna/os/sign?lang=en-us&act_id=e202308141137581',
-    'Zenless_Zone_Zero': 'https://sg-public-api.hoyolab.com/event/luna/zzz/os/sign?lang=en-us&act_id=e202406031448091',
+    'Genshin': 'https://sg-public-api.hoyoverse.com/event/sol/sign?lang=en-us&act_id=e202102251931481',
+    'Star_Rail': 'https://sg-public-api.hoyoverse.com/event/luna/os/sign?lang=en-us&act_id=e202303301540311',
+    'Honkai_3': 'https://sg-public-api.hoyoverse.com/event/mani/sign?lang=en-us&act_id=e202110291205111',
+    'Tears_of_Themis': 'https://sg-public-api.hoyoverse.com/event/luna/os/sign?lang=en-us&act_id=e202308141137581',
+    'Zenless_Zone_Zero': 'https://sg-public-api.hoyoverse.com/event/luna/zzz/os/sign?lang=en-us&act_id=e202406031448091',
 }
 
 HEADER_DICT = {
@@ -102,6 +102,7 @@ def sign_game(profile, game_name):
 
 
 def main():
+    # HOYOLAB_TOKEN 现在存储完整 Cookie
     token = os.getenv('HOYOLAB_TOKEN', '')
     if not token:
         print("Error: HOYOLAB_TOKEN not set")
