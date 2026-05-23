@@ -21,4 +21,4 @@ jobs:
           ACCOUNT_NAME: "My Account"
         run: |
           pip install requests -q
-          python hoyolab_sign.py
+          python hoyo_sign.py
