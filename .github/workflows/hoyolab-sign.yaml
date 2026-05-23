@@ -1,7 +1,7 @@
 name: Hoyolab Auto Sign
 on:
   schedule:
-    - cron: '0 21 * * *'
+    - cron: '10 16 * * *'
   workflow_dispatch:
 jobs:
   sign:
