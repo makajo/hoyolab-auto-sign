@@ -12,7 +12,7 @@ jobs:
           persist-credentials: false
       - name: Run ZZZ sign
         env:
-          HOYOLAB_TOKEN: ${{{{ secrets.HOYOLAB_TOKEN }}}}
+          HOYOLAB_TOKEN: ${{ secrets.HOYOLAB_TOKEN }}
           ZZZ: true
           ZZZ_UID: "20150166"
           ACCOUNT_NAME: "My Account"
