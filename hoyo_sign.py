@@ -75,6 +75,11 @@ def sign_game(profile, game_name):
         resp = requests.post(url, headers=headers, timeout=15)
         data = resp.json()
 
+        if data is None:
+            result = f"❌ {game_name.replace('_', ' ')}: API returned empty response (status={resp.status_code})"
+            time.sleep(GAME_DELAY)
+            return result
+
         if data.get('retcode') == 0:
             result = f"✅ {game_name.replace('_', ' ')}: {data['data']['is_sign']} - {data['data']['info']}"
         else:
