@@ -73,10 +73,15 @@ def sign_game(profile, game_name):
 
     try:
         resp = requests.post(url, headers=headers, timeout=15)
-        data = resp.json()
+        if resp.status_code != 200:
+            return f"❌ {game_name.replace('_', ' ')}: HTTP {resp.status_code}, body={resp.text[:200]}"
+        try:
+            data = resp.json()
+        except:
+            return f"❌ {game_name.replace('_', ' ')}: Invalid JSON response (status={resp.status_code}, body={resp.text[:200]})"
 
         if data is None:
-            result = f"❌ {game_name.replace('_', ' ')}: API returned empty response (status={resp.status_code})"
+            result = f"❌ {game_name.replace('_', ' ')}: API returned empty response"
             time.sleep(GAME_DELAY)
             return result
 
