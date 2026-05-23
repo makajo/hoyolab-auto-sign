@@ -89,7 +89,8 @@ def sign_game(profile, game_name):
             result = f"✅ {game_name.replace('_', ' ')}: {data['data']['is_sign']} - {data['data']['info']}"
         else:
             msg = data.get('message', 'Unknown error')
-            if data.get('data', {}).get('gt_result', {}).get('is_risk'):
+            gt_result = (data.get('data') or {}).get('gt_result')
+            if gt_result and gt_result.get('is_risk'):
                 msg = 'CAPTCHA blocked'
             result = f"❌ {game_name.replace('_', ' ')}: {msg}"
 
