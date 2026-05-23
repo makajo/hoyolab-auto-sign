@@ -1,0 +1,24 @@
+name: Hoyolab Auto Sign
+on:
+  schedule:
+    - cron: '0 22 * * *'
+  workflow_dispatch:
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Run Hoyolab sign
+        env:
+          HOYOLAB_TOKEN: ${{ secrets.HOYOLAB_TOKEN }}
+          GENSHIN: true
+          STAR_RAIL: true
+          HONKAI_3: true
+          THERMIS: false
+          ZZZ: true
+          ACCOUNT_NAME: "My Account"
+        run: |
+          pip install requests -q
+          python hoyolab_sign.py
