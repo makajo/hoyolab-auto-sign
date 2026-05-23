@@ -2,40 +2,32 @@
 # -*- coding: utf-8 -*-
 """
 Hoyolab Auto Sign - GitHub Actions version
+国服 (CN Server) - 使用 api-takumi.miyoushe.com
 Supports: Genshin, Star Rail, Honkai 3, Tears of Themis, Zenless Zone Zero
 """
 import requests
 import time
 import random
+import hashlib
 import os
 
 
-USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
+USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15'
+DEVICE_ID = '7ab3bc70b846186b9da1e816e6c6f08d'
+APP_VERSION = '2.41.1'
+SALT = '1OUn34iIy84ypu9cpXyun2VaQ2zuFeLm'
 
-URL_DICT = {
-    'Genshin': 'https://bbs-api-os.hoyoverse.com/apihub/app/sign/in?game=ys',
-    'Star_Rail': 'https://bbs-api-os.hoyoverse.com/apihub/app/sign/in?game=hkrpg',
-    'Honkai_3': 'https://bbs-api-os.hoyoverse.com/apihub/app/sign/in?game=bh3',
-    'Tears_of_Themis': 'https://bbs-api-os.hoyoverse.com/apihub/app/sign/in?game=thw',
-    'Zenless_Zone_Zero': 'https://bbs-api-os.hoyoverse.com/apihub/app/sign/in?game=nbc',
-}
 
-HEADER_DICT = {
-    'default': {
-        'Accept': 'application/json, text/plain, */*',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Connection': 'keep-alive',
-        'x-rpc-app_version': '2.41.1',
-        'User-Agent': USER_AGENT,
-        'x-rpc-client_type': '2',
-        'Content-Type': 'application/json',
-        'Origin': 'https://bbs-os.hoyoverse.com',
-        'Referer': 'https://bbs-os.hoyoverse.com/',
-    },
-    'Zenless_Zone_Zero': {
-        'x-rpc-signgame': 'zzz',
-    }
-}
+def get_ds():
+    t = str(int(time.time()))
+    r = str(random.randint(0, 999999)).zfill(6)
+    c = f"salt={SALT}&t={t}&r={r}"
+    md5 = hashlib.md5(c.encode()).hexdigest()
+    return f"{t},{r},{md5}"
+
+
+SIGN_INFO_URL = 'https://api-takumi.miyoushe.com/event/bbs_sign_reward/info'
+SIGN_URL = 'https://api-takumi.miyoushe.com/event/bbs_sign_reward/sign'
 
 DELAY_MIN = 1
 DELAY_MAX = 3
@@ -46,64 +38,96 @@ def random_delay():
     time.sleep(random.uniform(DELAY_MIN, DELAY_MAX))
 
 
+def get_headers(cookie):
+    ds = get_ds()
+    return {
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive',
+        'Cookie': cookie,
+        'User-Agent': USER_AGENT,
+        'DS': ds,
+        'x-rpc-device_id': DEVICE_ID,
+        'x-rpc-app_version': APP_VERSION,
+        'x-rpc-client_type': '2',
+        'Content-Type': 'application/json',
+        'Referer': 'https://webstatic.miyoushe.com/',
+    }
+
+
+# 国服游戏配置: (act_id, region, uid_key)
+GAME_CONFIG = {
+    'Genshin': ('e20230330144011', 'prod_gf_cn', 'genshin_uid'),
+    'Star_Rail': ('e202102251931481', 'prod_gf_cn', 'star_rail_uid'),
+    'Honkai_3': ('e20230330144011', 'prod_bbs_cn', 'honkai_3_uid'),
+    'Tears_of_Themis': ('e20230330144011', 'prod_gf_cn', 'tears_of_themis_uid'),
+    'Zenless_Zone_Zero': ('e202310201548501', 'prod_gf_cn', 'zzz_uid'),
+}
+
+
 def sign_game(profile, game_name):
     """签到单个游戏"""
     config = profile['games']
-    key = game_name.lower().replace(' ', '_').replace('-', '_')
-    if key == 'genshin':
-        key = 'genshin'
-    elif game_name == 'Honkai_3':
-        key = 'honkai_3'
-    elif game_name == 'Star_Rail':
-        key = 'honkai_star_rail'
-    elif game_name == 'Tears_of_Themis':
-        key = 'tears_of_themis'
-    elif game_name == 'Zenless_Zone_Zero':
-        key = 'zenless_zone_zero'
-    if not config.get(key, False):
+
+    # 映射游戏名到配置 key
+    game_map = {
+        'Genshin': 'genshin',
+        'Star_Rail': 'honkai_star_rail',
+        'Honkai_3': 'honkai_3',
+        'Tears_of_Themis': 'tears_of_themis',
+        'Zenless_Zone_Zero': 'zenless_zone_zero',
+    }
+    config_key = game_map.get(game_name, '')
+    if config_key not in config or not config[config_key]:
         return None
 
-    headers = {
-        **HEADER_DICT['default'],
-        **HEADER_DICT.get(game_name, {}),
-        'Cookie': profile['token']
-    }
+    uid_key = GAME_CONFIG[game_name][2]
+    uid = profile.get(uid_key, '0')
 
-    url = URL_DICT[game_name]
+    act_id, region, _ = GAME_CONFIG[game_name]
+
+    headers = get_headers(profile['token'])
     random_delay()
 
+    # 先调 info 获取 act_id 验证
     try:
-        resp = requests.post(url, headers=headers, json={"gids": 2}, timeout=15)
-        if resp.status_code != 200:
-            return f"❌ {game_name.replace('_', ' ')}: HTTP {resp.status_code}, body={resp.text[:200]}"
-        try:
-            data = resp.json()
-        except:
-            return f"❌ {game_name.replace('_', ' ')}: Invalid JSON response (status={resp.status_code}, body={resp.text[:200]})"
+        info_url = f"{SIGN_INFO_URL}?region={region}&act_id={act_id}"
+        info_resp = requests.post(
+            info_url, headers=headers,
+            json={"uid": uid, "region": region, "act_id": act_id},
+            timeout=15
+        )
+        info_data = info_resp.json()
 
-        if data is None:
-            result = f"❌ {game_name.replace('_', ' ')}: API returned empty response"
-            time.sleep(GAME_DELAY)
-            return result
+        if info_data.get('retcode') != 0:
+            return f"❌ {game_name}: {info_data.get('message', 'unknown error')}"
 
-        if data.get('retcode') == 0:
-            result = f"✅ {game_name.replace('_', ' ')}: {data['data']['is_sign']} - {data['data']['info']}"
+        sign_data = info_data.get('data', {})
+        is_sign = sign_data.get('is_sign', False)
+
+        # 如果没签到，再调 sign 接口
+        if not is_sign:
+            sign_resp = requests.post(
+                SIGN_URL, headers=headers,
+                json={"uid": uid, "region": region, "act_id": act_id},
+                timeout=15
+            )
+            sign_data = sign_resp.json()
+            if sign_data.get('retcode') == 0:
+                is_sign = sign_data.get('data', {}).get('is_sign', True)
+
+        if is_sign:
+            return f"✅ {game_name}: Signed in"
         else:
-            msg = data.get('message', 'Unknown error')
-            gt_result = (data.get('data') or {}).get('gt_result')
-            if gt_result and gt_result.get('is_risk'):
-                msg = 'CAPTCHA blocked'
-            result = f"❌ {game_name.replace('_', ' ')}: {msg}"
-
-        time.sleep(GAME_DELAY)
-        return result
+            return f"❌ {game_name}: Sign failed"
 
     except Exception as e:
-        return f"❌ {game_name.replace('_', ' ')}: {str(e)}"
+        return f"❌ {game_name}: {str(e)}"
+
+    time.sleep(GAME_DELAY)
 
 
 def main():
-    # HOYOLAB_TOKEN 现在存储完整 Cookie
     token = os.getenv('HOYOLAB_TOKEN', '')
     if not token:
         print("Error: HOYOLAB_TOKEN not set")
@@ -118,26 +142,20 @@ def main():
             'tears_of_themis': os.getenv('THERMIS', 'false').lower() == 'true',
             'zenless_zone_zero': os.getenv('ZZZ', 'false').lower() == 'true',
         },
-        'accountName': os.getenv('ACCOUNT_NAME', 'My Account')
+        'accountName': os.getenv('ACCOUNT_NAME', 'My Account'),
+        # 国服游戏 UID
+        'genshin_uid': os.getenv('GENSHIN_UID', '0'),
+        'star_rail_uid': os.getenv('STAR_RAIL_UID', '0'),
+        'honkai_3_uid': os.getenv('HONKAI_3_UID', '0'),
+        'tears_of_themis_uid': os.getenv('THERMIS_UID', '0'),
+        'zzz_uid': os.getenv('ZZZ_UID', '0'),
     }
 
-    print(f"Hoyolab Auto Sign - {profile['accountName']}")
+    print(f"Hoyolab Auto Sign - {profile['accountName']} (CN Server)")
     print("=" * 50)
 
     results = []
-    for game_name in URL_DICT:
-        game_key = game_name.lower().replace(' ', '_').replace('-', '_')
-        if game_key == 'genshin':
-            game_key = 'genshin'
-        elif game_name == 'Honkai_3':
-            game_key = 'honkai_3'
-        elif game_name == 'Star_Rail':
-            game_key = 'honkai_star_rail'
-        elif game_name == 'Tears_of_Themis':
-            game_key = 'tears_of_themis'
-        elif game_name == 'Zenless_Zone_Zero':
-            game_key = 'zenless_zone_zero'
-
+    for game_name in GAME_CONFIG:
         result = sign_game(profile, game_name)
         if result:
             results.append(result)
